@@ -19,6 +19,7 @@ class StartCommand implements CommandInterface {
         $menu = [
             'inline_keyboard' => [
                 [['text' => '📋 Склад', 'callback_data' => 'list_materials']],
+                [['text' => '➕ Додати матеріал', 'callback_data' => 'add_material']],
                 [['text' => '➖ Списати', 'callback_data' => 'start_deduct']]
             ]
         ];

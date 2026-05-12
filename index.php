@@ -20,10 +20,12 @@ if (!$update) {
 
 try {
     $bot = new TelegramBot(TELEGRAM_TOKEN);
-    $userRepo = new UserRepository(); // <--- Тут може впасти через підключення до БД
+    $userRepo = new UserRepository();
     $userService = new UserService($userRepo);
+    $stateRepo = new \App\Repositories\UserStateRepository();
+    $stateService = new \App\Services\StateService($stateRepo);
 
-    $controller = new BotController($bot, $userService);
+    $controller = new BotController($bot, $userService, $stateService);
     $controller->handleUpdate($update);
 
 } catch (\Throwable $e) {
