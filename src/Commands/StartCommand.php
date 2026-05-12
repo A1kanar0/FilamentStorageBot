@@ -14,7 +14,7 @@ class StartCommand implements CommandInterface {
     public function execute(int $chatId, array $data): void {
         $firstName = $data['from']['first_name'] ?? 'Колего';
 
-        $this->userService::authorize($chatId, $firstName);
+        $this->userService->authorize($chatId, $firstName);
 
         $menu = [
             'inline_keyboard' => [
