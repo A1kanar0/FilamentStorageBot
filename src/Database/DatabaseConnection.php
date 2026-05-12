@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Database;
+
 use PDO;
 use PDOException;
 use Exception;
@@ -11,14 +13,9 @@ class DatabaseConnection
 
     private function __construct()
     {
-        $host = '127.0.0.1';
-        $port = '8888';
-        $db   = 'filament_db';
-        $user = 'root';
-        $pass = 'root';
-        $charset = 'utf8mb4';
+        $config = DB_CONFIG;
 
-        $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
+        $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['db']};charset=utf8mb4";
 
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -27,7 +24,12 @@ class DatabaseConnection
         ];
 
         try {
-            $this->connection = new PDO($dsn, $user, $pass, $options);
+            $this->connection = new PDO(
+                $dsn,
+                $config['user'],
+                $config['pass'],
+                $options
+            );
         } catch (PDOException $e) {
             throw new Exception("Помилка підключення до БД: " . $e->getMessage());
         }
