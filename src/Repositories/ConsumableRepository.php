@@ -29,6 +29,7 @@ class ConsumableRepository implements ConsumableRepositoryInterface
         return new Consumable(
             $row['id'],
             $row['name'],
+            $row['category'],
             $row['type'],
             (float) $row['initial_amount'],
             (float) $row['current_amount'],
@@ -54,6 +55,7 @@ class ConsumableRepository implements ConsumableRepositoryInterface
             $consumables[] = new Consumable(
                 $row['id'],
                 $row['name'],
+                $row['category'],
                 $row['type'],
                 (float) $row['initial_amount'],
                 (float) $row['current_amount'],
@@ -84,12 +86,13 @@ class ConsumableRepository implements ConsumableRepositoryInterface
     public function create(Consumable $consumable): bool
     {
         $stmt = $this->db->prepare("
-        INSERT INTO consumables (name, type, initial_amount, current_amount, unit, color, brand) 
-        VALUES (:name, :type, :initial_amount, :current_amount, :unit, :color, :brand)
+        INSERT INTO consumables (name, category, type, initial_amount, current_amount, unit, color, brand) 
+        VALUES (:name, :category, :type, :initial_amount, :current_amount, :unit, :color, :brand)
     ");
 
         return $stmt->execute([
             'name'           => $consumable->getName(),
+            'category'       => $consumable->getCategory(),
             'type'           => $consumable->getType(),
             'initial_amount' => $consumable->getInitialAmount(),
             'current_amount' => $consumable->getCurrentAmount(),

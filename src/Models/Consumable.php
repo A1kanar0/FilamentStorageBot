@@ -7,6 +7,7 @@ class Consumable
     public function __construct(
         private ?int $id,
         private ?string $name,
+        private string $category,
         private string $type,
         private float $initialAmount,
         private float $currentAmount,
@@ -18,6 +19,7 @@ class Consumable
 
     public function getId(): ?int { return $this->id; }
     public function getName(): ?string { return $this->name; }
+    public function getCategory(): string { return $this->category; }
     public function getType(): string { return $this->type; }
     public function getInitialAmount(): float { return $this->initialAmount; }
     public function getCurrentAmount(): float { return $this->currentAmount; }
@@ -60,5 +62,14 @@ class Consumable
             throw new \Exception("Залишок не може бути від'ємним.");
         }
         $this->currentAmount = $amount;
+    }
+
+    public function getTranslatedCategory(): string
+    {
+        return match ($this->category) {
+            'filament' => 'Філамент',
+            'resin'    => 'Смола',
+            default    => $this->category ?? 'Невідомо',
+        };
     }
 }

@@ -78,6 +78,7 @@ class ConsumableService implements ConsumableServiceInterface
         $consumable = new \App\Models\Consumable(
             null,
             $data['name'] ?? null,
+            $data['category'],
             $data['type'] ?? 'resin',
             $weight,
             $weight,
