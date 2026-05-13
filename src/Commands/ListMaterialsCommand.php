@@ -21,11 +21,12 @@ class ListMaterialsCommand implements CommandInterface {
 
         $response = "📦 **Наявні матеріали:**\n\n";
         foreach ($materials as $item) {
-            $response .= "🔹 {$item->getName()} ({$item->getBrand()})\n";
+            $response .= "🔹 {$item->getFormattedName()}\n";
             $response .= "   Залишок: {$item->getCurrentAmount()}{$item->getUnit()}\n";
             $response .= "   Колір: {$item->getColor()}\n\n";
         }
 
         $this->bot->sendMessage($chatId, $response);
+        $this->bot->sendMainMenu($chatId);
     }
 }

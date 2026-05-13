@@ -13,6 +13,11 @@ class StateService implements StateServiceInterface {
         return $state ? $state->getState() : 'IDLE';
     }
 
+    public function getCurrentStateFull(int $userId): ?UserState
+    {
+        return $this->stateRepository->getByUserId($userId);
+    }
+
     public function setNextState(int $userId, string $state, ?array $context = null): void {
         $ctxJson = $context ? json_encode($context) : null;
         $userState = new UserState($userId, $state, $ctxJson);

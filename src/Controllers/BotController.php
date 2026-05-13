@@ -5,9 +5,10 @@ namespace App\Controllers;
 use App\Commands\AddConsumableCommand;
 use App\Utils\TelegramBot;
 use App\Services\Interfaces\UserServiceInterface;
-use App\Services\Interfaces\StateServiceInterface; // Додай імпорт
+use App\Services\Interfaces\StateServiceInterface;
 use App\Commands\StartCommand;
 use App\Commands\ListMaterialsCommand;
+use App\Commands\DeductMaterialCommand;
 
 class BotController
 {
@@ -20,8 +21,9 @@ class BotController
     ) {
         $this->commandMap = [
             '/start'         => StartCommand::class,
-            'list_materials' => ListMaterialsCommand::class,
-            'add_material'   => AddConsumableCommand::class,
+            '📋 Склад'           => ListMaterialsCommand::class,
+            '➕ Додати матеріал' => AddConsumableCommand::class,
+            '➖ Списати'         => DeductMaterialCommand::class,
         ];
     }
 
@@ -47,6 +49,10 @@ class BotController
                 $this->executeCommand(AddConsumableCommand::class, $chatId, $update);
                 return;
             }
+            if (strpos($stateData->getState(), 'DEDUCT_') === 0) {
+                $this->executeCommand(DeductMaterialCommand::class, $chatId, $update);
+                return;
+            }
         }
 
         if (isset($this->commandMap[$input])) {
@@ -57,7 +63,7 @@ class BotController
     private function executeCommand(string $commandClass, int $chatId, array $update): void
     {
         $command = match ($commandClass) {
-            StartCommand::class => new StartCommand($this->bot, $this->userService),
+            StartCommand::class => new StartCommand($this->bot, $this->stateService, $this->userService),
 
             ListMaterialsCommand::class => new ListMaterialsCommand(
                 $this->bot,
@@ -65,6 +71,11 @@ class BotController
             ),
 
             AddConsumableCommand::class => new AddConsumableCommand(
+                $this->bot,
+                $this->stateService,
+                new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository())
+            ),
+            DeductMaterialCommand::class => new DeductMaterialCommand(
                 $this->bot,
                 $this->stateService,
                 new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository())

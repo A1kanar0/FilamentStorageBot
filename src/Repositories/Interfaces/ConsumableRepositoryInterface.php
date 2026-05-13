@@ -9,4 +9,5 @@ interface ConsumableRepositoryInterface
     public function findById(int $id): ?Consumable;
     public function getAll(): array;
     public function update(Consumable $consumable): bool;
+    public function create(Consumable $consumable): bool;
 }

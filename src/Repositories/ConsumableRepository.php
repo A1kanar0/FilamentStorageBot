@@ -74,4 +74,22 @@ class ConsumableRepository implements ConsumableRepositoryInterface
             'id' => $consumable->getId()
         ]);
     }
+
+    public function create(Consumable $consumable): bool
+    {
+        $stmt = $this->db->prepare("
+        INSERT INTO consumables (name, type, initial_amount, current_amount, unit, color, brand) 
+        VALUES (:name, :type, :initial_amount, :current_amount, :unit, :color, :brand)
+    ");
+
+        return $stmt->execute([
+            'name'           => $consumable->getName(),
+            'type'           => $consumable->getType(),
+            'initial_amount' => $consumable->getInitialAmount(),
+            'current_amount' => $consumable->getCurrentAmount(),
+            'unit'           => $consumable->getUnit(),
+            'color'          => $consumable->getColor(),
+            'brand'          => $consumable->getBrand()
+        ]);
+    }
 }
