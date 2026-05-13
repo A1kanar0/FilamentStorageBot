@@ -117,8 +117,14 @@ class CreateConsumableCommand implements CommandInterface
                     $this->bot->sendMainMenu($chatId);
 
                 } catch (\Exception $e) {
-                    $this->bot->sendMessage($chatId, "❌ Помилка: " . $e->getMessage());
-                    $this->bot->sendMainMenu($chatId);
+                    $errorMessage = $e->getMessage();
+                    if (strpos($errorMessage, 'вже зареєстрований') !== false) {
+                        $this->bot->sendMessage($chatId, "❌ " . $errorMessage);
+                        $this->stateService->clearState($chatId);
+                        $this->bot->sendMainMenu($chatId);
+                    } else {
+                        $this->bot->sendMessage($chatId, "❌ Помилка: " . $errorMessage . "\n\n⚖️ Спробуйте ввести вагу ще раз:");
+                    }
                 }
                 break;
         }
