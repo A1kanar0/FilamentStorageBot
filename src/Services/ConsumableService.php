@@ -35,7 +35,7 @@ class ConsumableService implements ConsumableServiceInterface
         if ($consumable->getCurrentAmount() < $amount) {
             throw new Exception("Недостатньо матеріалу на залишку.");
         }
-        
+
         $log = new UsageLog(
             null,
             $consumableId,
@@ -49,14 +49,8 @@ class ConsumableService implements ConsumableServiceInterface
 
         $consumable->deductAmount($amount);
 
-        if ($consumable->getCurrentAmount() <= 0) {
-            if (!$this->consumableRepository->delete($consumableId)) {
-                throw new Exception("Помилка при видаленні вичерпаного матеріалу.");
-            }
-        } else {
-            if (!$this->consumableRepository->update($consumable)) {
-                throw new Exception("Не вдалося оновити залишок у базі.");
-            }
+        if (!$this->consumableRepository->update($consumable)) {
+            throw new Exception("Не вдалося оновити залишок у базі.");
         }
     }
 

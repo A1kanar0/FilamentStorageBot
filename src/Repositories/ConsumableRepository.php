@@ -48,7 +48,7 @@ class ConsumableRepository implements ConsumableRepositoryInterface
 
     public function getAll(): array
     {
-        $stmt = $this->db->query("SELECT * FROM consumables ORDER BY name ASC");
+        $stmt = $this->db->query("SELECT * FROM consumables WHERE current_amount > 0 ORDER BY name ASC");
         $consumables = [];
 
         while ($row = $stmt->fetch()) {
