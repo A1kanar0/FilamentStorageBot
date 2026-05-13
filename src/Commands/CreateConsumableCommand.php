@@ -48,7 +48,7 @@ class CreateConsumableCommand implements CommandInterface
                 } else {
                     $context['type'] = 'resin';
                     $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
-                    $this->bot->sendMessage($chatId, "📝 Введіть назву смоли (наприклад, Anycubic Grey). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
+                    $this->bot->sendMessage($chatId, "📝 Введіть назву смоли (наприклад, Standard HD). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
                 }
                 break;
 
@@ -60,7 +60,7 @@ class CreateConsumableCommand implements CommandInterface
 
                 $context['type'] = $input;
                 $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
-                $this->bot->sendMessage($chatId, "📝 Введіть власну назву або специфікацію (наприклад, Black HQ). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
+                $this->bot->sendMessage($chatId, "📝 Введіть власну назву або специфікацію (наприклад, Matte). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
                 break;
 
             case 'ADD_WAITING_NAME':
