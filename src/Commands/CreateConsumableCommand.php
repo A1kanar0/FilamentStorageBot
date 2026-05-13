@@ -48,7 +48,7 @@ class CreateConsumableCommand implements CommandInterface
                 } else {
                     $context['type'] = 'resin';
                     $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
-                    $this->bot->sendMessage($chatId, "📝 Введіть назву смоли (наприклад, Anycubic Grey). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
+                    $this->bot->sendMessage($chatId, "📝 Введіть назву смоли (наприклад, Standard HD). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
                 }
                 break;
 
@@ -60,7 +60,7 @@ class CreateConsumableCommand implements CommandInterface
 
                 $context['type'] = $input;
                 $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
-                $this->bot->sendMessage($chatId, "📝 Введіть власну назву або специфікацію (наприклад, Black HQ). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
+                $this->bot->sendMessage($chatId, "📝 Введіть власну назву або специфікацію (наприклад, Matte). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
                 break;
 
             case 'ADD_WAITING_NAME':
@@ -117,8 +117,14 @@ class CreateConsumableCommand implements CommandInterface
                     $this->bot->sendMainMenu($chatId);
 
                 } catch (\Exception $e) {
-                    $this->bot->sendMessage($chatId, "❌ Помилка: " . $e->getMessage());
-                    $this->bot->sendMainMenu($chatId);
+                    $errorMessage = $e->getMessage();
+                    if (strpos($errorMessage, 'вже зареєстрований') !== false) {
+                        $this->bot->sendMessage($chatId, "❌ " . $errorMessage);
+                        $this->stateService->clearState($chatId);
+                        $this->bot->sendMainMenu($chatId);
+                    } else {
+                        $this->bot->sendMessage($chatId, "❌ Помилка: " . $errorMessage . "\n\n⚖️ Спробуйте ввести вагу ще раз:");
+                    }
                 }
                 break;
         }

@@ -5,12 +5,14 @@ namespace App\Services;
 use App\Models\UsageLog;
 use App\Models\Consumable;
 use App\Repositories\Interfaces\ConsumableRepositoryInterface;
-use App\Repositories\Interfaces\UsageLogRepositoryInterface; // Додано імпорт
+use App\Repositories\Interfaces\UsageLogRepositoryInterface;
 use App\Services\Interfaces\ConsumableServiceInterface;
 use Exception;
 
 class ConsumableService implements ConsumableServiceInterface
 {
+    public const MIN_THRESHOLD = 100.0;
+
     public function __construct(
         private ConsumableRepositoryInterface $consumableRepository,
         private UsageLogRepositoryInterface $usageLogRepository
@@ -35,7 +37,7 @@ class ConsumableService implements ConsumableServiceInterface
         if ($consumable->getCurrentAmount() < $amount) {
             throw new Exception("Недостатньо матеріалу на залишку.");
         }
-        
+
         $log = new UsageLog(
             null,
             $consumableId,
@@ -49,14 +51,8 @@ class ConsumableService implements ConsumableServiceInterface
 
         $consumable->deductAmount($amount);
 
-        if ($consumable->getCurrentAmount() <= 0) {
-            if (!$this->consumableRepository->delete($consumableId)) {
-                throw new Exception("Помилка при видаленні вичерпаного матеріалу.");
-            }
-        } else {
-            if (!$this->consumableRepository->update($consumable)) {
-                throw new Exception("Не вдалося оновити залишок у базі.");
-            }
+        if (!$this->consumableRepository->update($consumable)) {
+            throw new Exception("Не вдалося оновити залишок у базі.");
         }
     }
 
@@ -64,17 +60,6 @@ class ConsumableService implements ConsumableServiceInterface
     {
         $allowedCategories = ['filament', 'resin'];
         $allowedTypes = ['PLA', 'PETG', 'TPU', 'PLA+', 'PLA High-speed', 'PETG High-speed', 'ABS'];
-
-        $exists = $this->consumableRepository->exists(
-            $data['type'],
-            $data['brand'] ?? null,
-            $data['name'] ?? null,
-            $data['color'] ?? null
-        );
-
-        if ($exists) {
-            throw new Exception("Цей матеріал вже зареєстрований. Використовуйте 'Поповнити залишок'.");
-        }
 
         if (!in_array($data['category'], $allowedCategories)) {
             throw new Exception("Невідома категорія матеріалу.");
@@ -87,6 +72,24 @@ class ConsumableService implements ConsumableServiceInterface
         $weight = (float)($data['initial_amount'] ?? 0);
         if ($weight <= 0) {
             throw new Exception("Початкова вага має бути більшою за нуль.");
+        }
+
+        $existingMaterial = $this->consumableRepository->findByAttributes(
+            $data['type'],
+            $data['brand'] ?? null,
+            $data['name'] ?? null,
+            $data['color'] ?? null
+        );
+
+        if ($existingMaterial) {
+            if ($existingMaterial->getCurrentAmount() <= 0) {
+                if (!$this->consumableRepository->restoreMaterial($existingMaterial->getId(), $weight)) {
+                    throw new Exception("Помилка при відновленні матеріалу в БД.");
+                }
+                return;
+            } else {
+                throw new Exception("Цей матеріал вже зареєстрований. Використовуйте 'Поповнити залишок'.");
+            }
         }
 
         $consumable = new Consumable(
@@ -128,5 +131,18 @@ class ConsumableService implements ConsumableServiceInterface
     public function getConsumable(int $id): ?Consumable
     {
         return $this->consumableRepository->findById($id);
+    }
+
+    public function getStockStatus(float $currentAmount): string
+    {
+        if ($currentAmount <= 0) {
+            return 'EXHAUSTED';
+        }
+
+        if ($currentAmount <= self::MIN_THRESHOLD) {
+            return 'LOW_STOCK';
+        }
+
+        return 'NORMAL';
     }
 }

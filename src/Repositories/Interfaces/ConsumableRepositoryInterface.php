@@ -12,4 +12,7 @@ interface ConsumableRepositoryInterface
     public function update(Consumable $consumable): bool;
     public function create(Consumable $consumable): bool;
     public function exists(string $type, ?string $brand, ?string $name, ?string $color): bool;
+    public function findByAttributes(string $type, ?string $brand, ?string $name, ?string $color): ?Consumable;
+    public function restoreMaterial(int $id, float $newAmount): bool;
+
 }
