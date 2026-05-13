@@ -51,7 +51,8 @@ class TelegramBot {
                 [['text' => '📋 Склад']],
                 [['text' => '➕ Створити матеріал']],
                 [['text' => '📦 Поповнити залишок']],
-                [['text' => '➖ Списати']]
+                [['text' => '➖ Списати']],
+                [['text' => '📜 Історія']]
             ],
             'resize_keyboard' => true,
             'one_time_keyboard' => false

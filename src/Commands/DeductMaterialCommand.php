@@ -69,7 +69,7 @@ class DeductMaterialCommand implements CommandInterface
                 $item = $this->consumableService->getConsumable($context['consumable_id']);
                 $remainingBefore = $item->getCurrentAmount();
 
-                $this->consumableService->deductMaterial($context['consumable_id'], $amount);
+                $this->consumableService->deductMaterial($context['consumable_id'], $amount, $chatId);
 
                 $this->stateService->clearState($chatId);
 

@@ -2,14 +2,18 @@
 
 namespace App\Services;
 
+use App\Models\UsageLog;
+use App\Models\Consumable;
 use App\Repositories\Interfaces\ConsumableRepositoryInterface;
+use App\Repositories\Interfaces\UsageLogRepositoryInterface; // Додано імпорт
 use App\Services\Interfaces\ConsumableServiceInterface;
 use Exception;
 
 class ConsumableService implements ConsumableServiceInterface
 {
     public function __construct(
-        private ConsumableRepositoryInterface $consumableRepository
+        private ConsumableRepositoryInterface $consumableRepository,
+        private UsageLogRepositoryInterface $usageLogRepository
     ) {}
 
     public function getConsumablesList(): array
@@ -17,31 +21,41 @@ class ConsumableService implements ConsumableServiceInterface
         return $this->consumableRepository->getAll();
     }
 
-    public function deductMaterial(int $consumableId, float $amount): void
+    public function deductMaterial(int $consumableId, float $amount, int $userId): void
     {
         if ($amount <= 0) {
-            throw new \Exception("Сума списання має бути більшою за нуль.");
+            throw new Exception("Сума списання має бути більшою за нуль.");
         }
 
         $consumable = $this->consumableRepository->findById($consumableId);
-
         if (!$consumable) {
-            throw new \Exception("Матеріал не знайдено.");
+            throw new Exception("Матеріал не знайдено.");
         }
 
         if ($consumable->getCurrentAmount() < $amount) {
-            throw new \Exception("Недостатньо матеріалу на залишку (є лише {$consumable->getCurrentAmount()}г).");
+            throw new Exception("Недостатньо матеріалу на залишку.");
+        }
+        
+        $log = new UsageLog(
+            null,
+            $consumableId,
+            $userId,
+            $amount
+        );
+
+        if (!$this->usageLogRepository->save($log)) {
+            throw new Exception("Не вдалося записати дію в журнал.");
         }
 
         $consumable->deductAmount($amount);
 
         if ($consumable->getCurrentAmount() <= 0) {
             if (!$this->consumableRepository->delete($consumableId)) {
-                throw new \Exception("Помилка при видаленні вичерпаного матеріалу.");
+                throw new Exception("Помилка при видаленні вичерпаного матеріалу.");
             }
         } else {
             if (!$this->consumableRepository->update($consumable)) {
-                throw new \Exception("Не вдалося оновити залишок у базі.");
+                throw new Exception("Не вдалося оновити залишок у базі.");
             }
         }
     }
@@ -59,7 +73,7 @@ class ConsumableService implements ConsumableServiceInterface
         );
 
         if ($exists) {
-            throw new \Exception("Цей матеріал вже зареєстрований у системі. Використовуйте функцію поповнення залишків.");
+            throw new Exception("Цей матеріал вже зареєстрований. Використовуйте 'Поповнити залишок'.");
         }
 
         if (!in_array($data['category'], $allowedCategories)) {
@@ -75,7 +89,7 @@ class ConsumableService implements ConsumableServiceInterface
             throw new Exception("Початкова вага має бути більшою за нуль.");
         }
 
-        $consumable = new \App\Models\Consumable(
+        $consumable = new Consumable(
             null,
             $data['name'] ?? null,
             $data['category'],
@@ -88,30 +102,30 @@ class ConsumableService implements ConsumableServiceInterface
         );
 
         if (!$this->consumableRepository->create($consumable)) {
-            throw new Exception("Помилка при збереженні в БД.");
+            throw new Exception("Помилка при збереженні матеріалу в БД.");
         }
     }
 
     public function addStock(int $consumableId, float $amount): void
     {
         if ($amount <= 0) {
-            throw new \Exception("Сума поповнення має бути більшою за нуль.");
+            throw new Exception("Сума поповнення має бути більшою за нуль.");
         }
 
         $consumable = $this->consumableRepository->findById($consumableId);
         if (!$consumable) {
-            throw new \Exception("Матеріал не знайдено.");
+            throw new Exception("Матеріал не знайдено.");
         }
 
         $newAmount = $consumable->getCurrentAmount() + $amount;
         $consumable->setCurrentAmount($newAmount);
 
         if (!$this->consumableRepository->update($consumable)) {
-            throw new \Exception("Не вдалося оновити базу даних.");
+            throw new Exception("Не вдалося оновити базу даних.");
         }
     }
 
-    public function getConsumable(int $id): ?\App\Models\Consumable
+    public function getConsumable(int $id): ?Consumable
     {
         return $this->consumableRepository->findById($id);
     }

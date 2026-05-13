@@ -10,6 +10,7 @@ use App\Commands\StartCommand;
 use App\Commands\ListMaterialsCommand;
 use App\Commands\DeductMaterialCommand;
 use App\Commands\AddStockCommand;
+use App\Commands\HistoryCommand;
 
 class BotController
 {
@@ -26,6 +27,7 @@ class BotController
             '➕ Створити матеріал' => CreateConsumableCommand::class,
             '📦 Поповнити залишок' => AddStockCommand::class,
             '➖ Списати'         => DeductMaterialCommand::class,
+            '📜 Історія' => HistoryCommand::class,
         ];
     }
 
@@ -68,7 +70,9 @@ class BotController
 
     private function executeCommand(string $commandClass, int $chatId, array $update): void
     {
-        $consumableService = new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository());
+        $consumableRepo = new \App\Repositories\ConsumableRepository();
+        $usageLogRepo = new \App\Repositories\UsageLogRepository();
+        $consumableService = new \App\Services\ConsumableService($consumableRepo, $usageLogRepo);
         $command = match ($commandClass) {
             StartCommand::class => new StartCommand($this->bot, $this->stateService, $this->userService),
 
@@ -92,11 +96,14 @@ class BotController
                 $this->stateService,
                 $consumableService
             ),
+            HistoryCommand::class => new HistoryCommand($this->bot, $usageLogRepo),
 
             default => null
         };
 
         if ($command) {
+            $userId = $chatId;
+
             $command->execute($chatId, $update);
         }
     }
