@@ -6,7 +6,8 @@ class Consumable
 {
     public function __construct(
         private ?int $id,
-        private string $name,
+        private ?string $name,
+        private string $category,
         private string $type,
         private float $initialAmount,
         private float $currentAmount,
@@ -17,7 +18,8 @@ class Consumable
     ) {}
 
     public function getId(): ?int { return $this->id; }
-    public function getName(): string { return $this->name; }
+    public function getName(): ?string { return $this->name; }
+    public function getCategory(): string { return $this->category; }
     public function getType(): string { return $this->type; }
     public function getInitialAmount(): float { return $this->initialAmount; }
     public function getCurrentAmount(): float { return $this->currentAmount; }
@@ -32,5 +34,42 @@ class Consumable
         if ($this->currentAmount < 0) {
             $this->currentAmount = 0;
         }
+    }
+
+    public function getFormattedName(): string
+    {
+        $parts = [];
+
+        if (!empty($this->type)) {
+            $parts[] = $this->type;
+        }
+        if (!empty($this->brand)) {
+            $parts[] = $this->brand;
+        }
+        if (!empty($this->name)) {
+            $parts[] = $this->name;
+        }
+        if (!empty($this->color)) {
+            $parts[] = $this->color;
+        }
+
+        return implode(' ', $parts);
+    }
+
+    public function setCurrentAmount(float $amount): void
+    {
+        if ($amount < 0) {
+            throw new \Exception("Залишок не може бути від'ємним.");
+        }
+        $this->currentAmount = $amount;
+    }
+
+    public function getTranslatedCategory(): string
+    {
+        return match ($this->category) {
+            'filament' => 'Філамент',
+            'resin'    => 'Смола',
+            default    => $this->category ?? 'Невідомо',
+        };
     }
 }
