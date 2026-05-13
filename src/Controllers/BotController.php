@@ -9,6 +9,7 @@ use App\Services\Interfaces\StateServiceInterface;
 use App\Commands\StartCommand;
 use App\Commands\ListMaterialsCommand;
 use App\Commands\DeductMaterialCommand;
+use App\Commands\AddStockCommand;
 
 class BotController
 {
@@ -23,6 +24,7 @@ class BotController
             '/start'         => StartCommand::class,
             '📋 Склад'           => ListMaterialsCommand::class,
             '➕ Створити матеріал' => CreateConsumableCommand::class,
+            '📦 Поповнити залишок' => AddStockCommand::class,
             '➖ Списати'         => DeductMaterialCommand::class,
         ];
     }
@@ -53,6 +55,10 @@ class BotController
                 $this->executeCommand(DeductMaterialCommand::class, $chatId, $update);
                 return;
             }
+            if (strpos($stateData->getState(), 'ADD_STOCK_') === 0) {
+                $this->executeCommand(AddStockCommand::class, $chatId, $update);
+                return;
+            }
         }
 
         if (isset($this->commandMap[$input])) {
@@ -62,23 +68,29 @@ class BotController
 
     private function executeCommand(string $commandClass, int $chatId, array $update): void
     {
+        $consumableService = new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository());
         $command = match ($commandClass) {
             StartCommand::class => new StartCommand($this->bot, $this->stateService, $this->userService),
 
             ListMaterialsCommand::class => new ListMaterialsCommand(
                 $this->bot,
-                new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository())
+                $consumableService
             ),
 
             CreateConsumableCommand::class => new CreateConsumableCommand(
                 $this->bot,
                 $this->stateService,
-                new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository())
+                $consumableService
             ),
             DeductMaterialCommand::class => new DeductMaterialCommand(
                 $this->bot,
                 $this->stateService,
-                new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository())
+                $consumableService
+            ),
+            AddStockCommand::class => new AddStockCommand(
+                $this->bot,
+                $this->stateService,
+                $consumableService
             ),
 
             default => null

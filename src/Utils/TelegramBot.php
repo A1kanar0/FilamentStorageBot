@@ -50,6 +50,7 @@ class TelegramBot {
             'keyboard' => [
                 [['text' => '📋 Склад']],
                 [['text' => '➕ Створити матеріал']],
+                [['text' => '📦 Поповнити залишок']],
                 [['text' => '➖ Списати']]
             ],
             'resize_keyboard' => true,

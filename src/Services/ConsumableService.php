@@ -84,4 +84,23 @@ class ConsumableService implements ConsumableServiceInterface
             throw new Exception("Помилка при збереженні в БД.");
         }
     }
+
+    public function addStock(int $consumableId, float $amount): void
+    {
+        if ($amount <= 0) {
+            throw new \Exception("Сума поповнення має бути більшою за нуль.");
+        }
+
+        $consumable = $this->consumableRepository->findById($consumableId);
+        if (!$consumable) {
+            throw new \Exception("Матеріал не знайдено.");
+        }
+
+        $newAmount = $consumable->getCurrentAmount() + $amount;
+        $consumable->setCurrentAmount($newAmount);
+
+        if (!$this->consumableRepository->update($consumable)) {
+            throw new \Exception("Не вдалося оновити базу даних.");
+        }
+    }
 }
