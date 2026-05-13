@@ -5,17 +5,18 @@ namespace App\Services;
 use App\Models\UsageLog;
 use App\Models\Consumable;
 use App\Repositories\Interfaces\ConsumableRepositoryInterface;
-use App\Repositories\Interfaces\UsageLogRepositoryInterface; // Додано імпорт
+use App\Repositories\Interfaces\UsageLogRepositoryInterface;
 use App\Services\Interfaces\ConsumableServiceInterface;
 use Exception;
 
 class ConsumableService implements ConsumableServiceInterface
 {
+    public const MIN_THRESHOLD = 100.0;
+
     public function __construct(
         private ConsumableRepositoryInterface $consumableRepository,
         private UsageLogRepositoryInterface $usageLogRepository
     ) {}
-    public const MIN_THRESHOLD = 100.0;
 
     public function getConsumablesList(): array
     {
@@ -60,17 +61,6 @@ class ConsumableService implements ConsumableServiceInterface
         $allowedCategories = ['filament', 'resin'];
         $allowedTypes = ['PLA', 'PETG', 'TPU', 'PLA+', 'PLA High-speed', 'PETG High-speed', 'ABS'];
 
-        $exists = $this->consumableRepository->exists(
-            $data['type'],
-            $data['brand'] ?? null,
-            $data['name'] ?? null,
-            $data['color'] ?? null
-        );
-
-        if ($exists) {
-            throw new Exception("Цей матеріал вже зареєстрований. Використовуйте 'Поповнити залишок'.");
-        }
-
         if (!in_array($data['category'], $allowedCategories)) {
             throw new Exception("Невідома категорія матеріалу.");
         }
@@ -82,6 +72,24 @@ class ConsumableService implements ConsumableServiceInterface
         $weight = (float)($data['initial_amount'] ?? 0);
         if ($weight <= 0) {
             throw new Exception("Початкова вага має бути більшою за нуль.");
+        }
+
+        $existingMaterial = $this->consumableRepository->findByAttributes(
+            $data['type'],
+            $data['brand'] ?? null,
+            $data['name'] ?? null,
+            $data['color'] ?? null
+        );
+
+        if ($existingMaterial) {
+            if ($existingMaterial->getCurrentAmount() <= 0) {
+                if (!$this->consumableRepository->restoreMaterial($existingMaterial->getId(), $weight)) {
+                    throw new Exception("Помилка при відновленні матеріалу в БД.");
+                }
+                return;
+            } else {
+                throw new Exception("Цей матеріал вже зареєстрований. Використовуйте 'Поповнити залишок'.");
+            }
         }
 
         $consumable = new Consumable(

@@ -123,4 +123,54 @@ class ConsumableRepository implements ConsumableRepositoryInterface
 
         return $stmt->fetchColumn() > 0;
     }
+
+    public function findByAttributes(string $type, ?string $brand, ?string $name, ?string $color): ?Consumable
+    {
+        $stmt = $this->db->prepare("
+            SELECT * FROM consumables 
+            WHERE type = :type 
+              AND (brand = :brand OR (brand IS NULL AND :brand_null IS NULL))
+              AND (name = :name OR (name IS NULL AND :name_null IS NULL))
+              AND (color = :color OR (color IS NULL AND :color_null IS NULL))
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            'type' => $type,
+            'brand' => $brand,
+            'brand_null' => $brand,
+            'name' => $name,
+            'name_null' => $name,
+            'color' => $color,
+            'color_null' => $color
+        ]);
+
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            return null;
+        }
+
+        return new Consumable(
+            $row['id'], $row['name'], $row['category'], $row['type'],
+            (float) $row['initial_amount'], (float) $row['current_amount'],
+            $row['unit'], $row['color'], $row['brand'], $row['created_at']
+        );
+    }
+
+    public function restoreMaterial(int $id, float $newAmount): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE consumables 
+            SET current_amount = :current_amount, 
+                initial_amount = :initial_amount 
+            WHERE id = :id
+        ");
+
+        return $stmt->execute([
+            'current_amount' => $newAmount,
+            'initial_amount' => $newAmount,
+            'id'             => $id
+        ]);
+    }
 }
