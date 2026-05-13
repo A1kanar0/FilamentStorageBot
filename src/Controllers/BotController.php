@@ -22,12 +22,12 @@ class BotController
         private StateServiceInterface $stateService
     ) {
         $this->commandMap = [
-            '/start'         => StartCommand::class,
-            '📋 Склад'           => ListMaterialsCommand::class,
+            '/start'               => StartCommand::class,
+            '📋 Склад'             => ListMaterialsCommand::class,
             '➕ Створити матеріал' => CreateConsumableCommand::class,
             '📦 Поповнити залишок' => AddStockCommand::class,
-            '➖ Списати'         => DeductMaterialCommand::class,
-            '📜 Історія' => HistoryCommand::class,
+            '➖ Списати'           => DeductMaterialCommand::class,
+            '📜 Історія'           => HistoryCommand::class,
         ];
     }
 
@@ -35,18 +35,30 @@ class BotController
     {
         $chatId = null;
         $input = null;
+        $username = 'User';
 
         if (isset($update['message'])) {
             $chatId = $update['message']['chat']['id'];
             $input = $update['message']['text'] ?? '';
+            $username = $update['message']['from']['username'] ?? 'User';
         } elseif (isset($update['callback_query'])) {
             $chatId = $update['callback_query']['message']['chat']['id'];
             $input = $update['callback_query']['data'];
+            $username = $update['callback_query']['from']['username'] ?? 'User';
         }
 
         if (!$chatId) return;
 
+        $this->userService->authorize($chatId, $username);
+
         $stateData = $this->stateService->getCurrentStateFull($chatId);
+
+        $globalCommands = array_keys($this->commandMap);
+
+        if ($stateData && in_array($input, $globalCommands)) {
+            $this->stateService->clearState($chatId);
+            $stateData = null; // Анулюємо стан для подальшої обробки
+        }
 
         if ($stateData && strpos($input, '/') !== 0) {
             if (strpos($stateData->getState(), 'ADD_STOCK_') === 0) {
@@ -73,14 +85,17 @@ class BotController
         $consumableRepo = new \App\Repositories\ConsumableRepository();
         $usageLogRepo = new \App\Repositories\UsageLogRepository();
         $consumableService = new \App\Services\ConsumableService($consumableRepo, $usageLogRepo);
-        $command = match ($commandClass) {
-            StartCommand::class => new StartCommand($this->bot, $this->stateService, $this->userService),
 
+        $command = match ($commandClass) {
+            StartCommand::class => new StartCommand(
+                $this->bot,
+                $this->stateService,
+                $this->userService
+            ),
             ListMaterialsCommand::class => new ListMaterialsCommand(
                 $this->bot,
                 $consumableService
             ),
-
             CreateConsumableCommand::class => new CreateConsumableCommand(
                 $this->bot,
                 $this->stateService,
@@ -96,14 +111,14 @@ class BotController
                 $this->stateService,
                 $consumableService
             ),
-            HistoryCommand::class => new HistoryCommand($this->bot, $usageLogRepo),
-
+            HistoryCommand::class => new HistoryCommand(
+                $this->bot,
+                $usageLogRepo
+            ),
             default => null
         };
 
         if ($command) {
-            $userId = $chatId;
-
             $command->execute($chatId, $update);
         }
     }
