@@ -67,19 +67,24 @@ class DeductMaterialCommand implements CommandInterface
 
             try {
                 $item = $this->consumableService->getConsumable($context['consumable_id']);
-                $remainingBefore = $item->getCurrentAmount();
 
                 $this->consumableService->deductMaterial($context['consumable_id'], $amount, $chatId);
 
                 $this->stateService->clearState($chatId);
 
-                if ($remainingBefore - $amount <= 0) {
-                    $message = "✅ Успішно списано останні **{$amount}г**. Матеріал вичерпано та видалено зі складу!";
-                } else {
-                    $message = "✅ Успішно списано **{$amount}г**. Залишок оновлено!";
-                }
+                $message = "✅ Успішно списано **{$amount}г**. Залишок оновлено!";
+
+                $updatedMaterial = $this->consumableService->getConsumable($context['consumable_id']);
+                $currentAmount = $updatedMaterial ? $updatedMaterial->getCurrentAmount() : 0;
+
 
                 $this->bot->sendMessage($chatId, $message);
+                $stockStatus = $this->consumableService->getStockStatus($currentAmount);
+                if ($stockStatus === 'LOW_STOCK') {
+                    $this->bot->sendMessage($chatId, "⚠️ **УВАГА: Низький залишок!**\nМатеріал закінчується. Залишилось лише **{$currentAmount}г**.");
+                } elseif ($stockStatus === 'EXHAUSTED') {
+                    $this->bot->sendMessage($chatId, "ℹ️ Матеріал повністю вичерпано. Він більше не відображатиметься на складі.");
+                }
                 $this->bot->sendMainMenu($chatId);
 
             } catch (\Exception $e) {

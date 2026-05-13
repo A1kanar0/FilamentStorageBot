@@ -15,6 +15,7 @@ class ConsumableService implements ConsumableServiceInterface
         private ConsumableRepositoryInterface $consumableRepository,
         private UsageLogRepositoryInterface $usageLogRepository
     ) {}
+    public const MIN_THRESHOLD = 100.0;
 
     public function getConsumablesList(): array
     {
@@ -122,5 +123,18 @@ class ConsumableService implements ConsumableServiceInterface
     public function getConsumable(int $id): ?Consumable
     {
         return $this->consumableRepository->findById($id);
+    }
+
+    public function getStockStatus(float $currentAmount): string
+    {
+        if ($currentAmount <= 0) {
+            return 'EXHAUSTED';
+        }
+
+        if ($currentAmount <= self::MIN_THRESHOLD) {
+            return 'LOW_STOCK';
+        }
+
+        return 'NORMAL';
     }
 }
