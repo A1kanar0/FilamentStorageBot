@@ -7,7 +7,7 @@ use App\Services\Interfaces\StateServiceInterface;
 use App\Services\Interfaces\ConsumableServiceInterface;
 use App\Utils\TelegramBot;
 
-class AddConsumableCommand implements CommandInterface
+class CreateConsumableCommand implements CommandInterface
 {
     private array $allowedTypes = ['PLA', 'PETG', 'TPU', 'PLA+', 'PLA High-speed', 'PETG High-speed', 'ABS'];
     private array $categories = ['Філамент' => 'filament', 'Смола' => 'resin'];
@@ -113,7 +113,7 @@ class AddConsumableCommand implements CommandInterface
 
                     $displayName = implode(' ', $parts);
 
-                    $this->bot->sendMessage($chatId, "✅ Матеріал **{$displayName}** успішно додано на склад!");
+                    $this->bot->sendMessage($chatId, "✅ Новий матеріал **{$displayName}** успішно внесено до реєстру!");
                     $this->bot->sendMainMenu($chatId);
 
                 } catch (\Exception $e) {

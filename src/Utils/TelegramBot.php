@@ -49,7 +49,7 @@ class TelegramBot {
         $keyboard = [
             'keyboard' => [
                 [['text' => '📋 Склад']],
-                [['text' => '➕ Додати матеріал']],
+                [['text' => '➕ Створити матеріал']],
                 [['text' => '➖ Списати']]
             ],
             'resize_keyboard' => true,

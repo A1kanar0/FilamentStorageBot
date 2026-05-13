@@ -45,6 +45,16 @@ class ConsumableService implements ConsumableServiceInterface
         $allowedCategories = ['filament', 'resin'];
         $allowedTypes = ['PLA', 'PETG', 'TPU', 'PLA+', 'PLA High-speed', 'PETG High-speed', 'ABS'];
 
+        $exists = $this->consumableRepository->exists(
+            $data['type'],
+            $data['brand'] ?? null,
+            $data['name'] ?? null,
+            $data['color'] ?? null
+        );
+
+        if ($exists) {
+            throw new \Exception("Цей матеріал вже зареєстрований у системі. Використовуйте функцію поповнення залишків.");
+        }
 
         if (!in_array($data['category'], $allowedCategories)) {
             throw new Exception("Невідома категорія матеріалу.");

@@ -92,4 +92,26 @@ class ConsumableRepository implements ConsumableRepositoryInterface
             'brand'          => $consumable->getBrand()
         ]);
     }
+    public function exists(string $type, ?string $brand, ?string $name, ?string $color): bool
+    {
+        $stmt = $this->db->prepare("
+        SELECT COUNT(*) FROM consumables 
+        WHERE type = :type 
+          AND (brand = :brand OR (brand IS NULL AND :brand_null IS NULL))
+          AND (name = :name OR (name IS NULL AND :name_null IS NULL))
+          AND (color = :color OR (color IS NULL AND :color_null IS NULL))
+    ");
+
+        $stmt->execute([
+            'type' => $type,
+            'brand' => $brand,
+            'brand_null' => $brand,
+            'name' => $name,
+            'name_null' => $name,
+            'color' => $color,
+            'color_null' => $color
+        ]);
+
+        return $stmt->fetchColumn() > 0;
+    }
 }

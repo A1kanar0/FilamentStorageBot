@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Commands\AddConsumableCommand;
+use App\Commands\CreateConsumableCommand;
 use App\Utils\TelegramBot;
 use App\Services\Interfaces\UserServiceInterface;
 use App\Services\Interfaces\StateServiceInterface;
@@ -22,7 +22,7 @@ class BotController
         $this->commandMap = [
             '/start'         => StartCommand::class,
             '📋 Склад'           => ListMaterialsCommand::class,
-            '➕ Додати матеріал' => AddConsumableCommand::class,
+            '➕ Створити матеріал' => CreateConsumableCommand::class,
             '➖ Списати'         => DeductMaterialCommand::class,
         ];
     }
@@ -46,7 +46,7 @@ class BotController
 
         if ($stateData && strpos($input, '/') !== 0) {
             if (strpos($stateData->getState(), 'ADD_') === 0) {
-                $this->executeCommand(AddConsumableCommand::class, $chatId, $update);
+                $this->executeCommand(CreateConsumableCommand::class, $chatId, $update);
                 return;
             }
             if (strpos($stateData->getState(), 'DEDUCT_') === 0) {
@@ -70,7 +70,7 @@ class BotController
                 new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository())
             ),
 
-            AddConsumableCommand::class => new AddConsumableCommand(
+            CreateConsumableCommand::class => new CreateConsumableCommand(
                 $this->bot,
                 $this->stateService,
                 new \App\Services\ConsumableService(new \App\Repositories\ConsumableRepository())

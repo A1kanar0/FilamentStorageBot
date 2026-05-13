@@ -10,4 +10,5 @@ interface ConsumableRepositoryInterface
     public function getAll(): array;
     public function update(Consumable $consumable): bool;
     public function create(Consumable $consumable): bool;
+    public function exists(string $type, ?string $brand, ?string $name, ?string $color): bool;
 }
