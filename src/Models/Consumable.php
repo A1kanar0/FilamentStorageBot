@@ -53,4 +53,12 @@ class Consumable
 
         return implode(' ', $parts);
     }
+
+    public function setCurrentAmount(float $amount): void
+    {
+        if ($amount < 0) {
+            throw new \Exception("Залишок не може бути від'ємним.");
+        }
+        $this->currentAmount = $amount;
+    }
 }

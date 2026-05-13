@@ -47,16 +47,16 @@ class BotController
         $stateData = $this->stateService->getCurrentStateFull($chatId);
 
         if ($stateData && strpos($input, '/') !== 0) {
+            if (strpos($stateData->getState(), 'ADD_STOCK_') === 0) {
+                $this->executeCommand(AddStockCommand::class, $chatId, $update);
+                return;
+            }
             if (strpos($stateData->getState(), 'ADD_') === 0) {
                 $this->executeCommand(CreateConsumableCommand::class, $chatId, $update);
                 return;
             }
             if (strpos($stateData->getState(), 'DEDUCT_') === 0) {
                 $this->executeCommand(DeductMaterialCommand::class, $chatId, $update);
-                return;
-            }
-            if (strpos($stateData->getState(), 'ADD_STOCK_') === 0) {
-                $this->executeCommand(AddStockCommand::class, $chatId, $update);
                 return;
             }
         }
