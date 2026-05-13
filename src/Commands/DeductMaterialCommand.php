@@ -66,10 +66,20 @@ class DeductMaterialCommand implements CommandInterface
             }
 
             try {
+                $item = $this->consumableService->getConsumable($context['consumable_id']);
+                $remainingBefore = $item->getCurrentAmount();
+
                 $this->consumableService->deductMaterial($context['consumable_id'], $amount);
 
                 $this->stateService->clearState($chatId);
-                $this->bot->sendMessage($chatId, "✅ Успішно списано **{$amount}г**. Залишок оновлено!");
+
+                if ($remainingBefore - $amount <= 0) {
+                    $message = "✅ Успішно списано останні **{$amount}г**. Матеріал вичерпано та видалено зі складу!";
+                } else {
+                    $message = "✅ Успішно списано **{$amount}г**. Залишок оновлено!";
+                }
+
+                $this->bot->sendMessage($chatId, $message);
                 $this->bot->sendMainMenu($chatId);
 
             } catch (\Exception $e) {

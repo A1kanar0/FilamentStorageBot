@@ -35,8 +35,14 @@ class ConsumableService implements ConsumableServiceInterface
 
         $consumable->deductAmount($amount);
 
-        if (!$this->consumableRepository->update($consumable)) {
-            throw new \Exception("Не вдалося оновити залишок у базі.");
+        if ($consumable->getCurrentAmount() <= 0) {
+            if (!$this->consumableRepository->delete($consumableId)) {
+                throw new \Exception("Помилка при видаленні вичерпаного матеріалу.");
+            }
+        } else {
+            if (!$this->consumableRepository->update($consumable)) {
+                throw new \Exception("Не вдалося оновити залишок у базі.");
+            }
         }
     }
 
@@ -102,5 +108,10 @@ class ConsumableService implements ConsumableServiceInterface
         if (!$this->consumableRepository->update($consumable)) {
             throw new \Exception("Не вдалося оновити базу даних.");
         }
+    }
+
+    public function getConsumable(int $id): ?\App\Models\Consumable
+    {
+        return $this->consumableRepository->findById($id);
     }
 }

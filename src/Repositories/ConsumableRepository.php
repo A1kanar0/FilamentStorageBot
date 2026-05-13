@@ -39,6 +39,12 @@ class ConsumableRepository implements ConsumableRepositoryInterface
         );
     }
 
+    public function delete(int $id): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM consumables WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
+
     public function getAll(): array
     {
         $stmt = $this->db->query("SELECT * FROM consumables ORDER BY name ASC");
