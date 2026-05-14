@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Utils;
-
+use App\Config\BotCommands;
 class TelegramBot {
+
     private string $apiUrl;
 
     public function __construct(string $token) {
@@ -48,11 +48,11 @@ class TelegramBot {
     public function sendMainMenu(int $chatId, string $text = "Оберіть дію:"): void {
         $keyboard = [
             'keyboard' => [
-                [['text' => '📋 Склад']],
-                [['text' => '➕ Створити матеріал']],
-                [['text' => '📦 Поповнити залишок']],
-                [['text' => '➖ Списати']],
-                [['text' => '📜 Історія']]
+                [['text' => BotCommands::BTN_STOCK]],
+                [['text' => BotCommands::BTN_CREATE]],
+                [['text' => BotCommands::BTN_ADD_STOCK]],
+                [['text' => BotCommands::BTN_DEDUCT]],
+                [['text' => BotCommands::BTN_HISTORY]]
             ],
             'resize_keyboard' => true,
             'one_time_keyboard' => false

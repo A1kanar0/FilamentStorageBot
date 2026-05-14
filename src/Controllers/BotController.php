@@ -12,6 +12,7 @@ use App\Commands\ListMaterialsCommand;
 use App\Commands\DeductMaterialCommand;
 use App\Commands\AddStockCommand;
 use App\Commands\HistoryCommand;
+use App\Config\BotCommands;
 
 class BotController
 {
@@ -28,18 +29,18 @@ class BotController
         $this->commandFactory = $commandFactory;
 
         $this->commandMap = [
-            '/start'               => StartCommand::class,
-            '📋 Склад'             => ListMaterialsCommand::class,
-            '➕ Створити матеріал' => CreateConsumableCommand::class,
-            '📦 Поповнити залишок' => AddStockCommand::class,
-            '➖ Списати'           => DeductMaterialCommand::class,
-            '📜 Історія'           => HistoryCommand::class,
+            BotCommands::CMD_START => StartCommand::class,
+            BotCommands::BTN_STOCK => ListMaterialsCommand::class,
+            BotCommands::BTN_CREATE => CreateConsumableCommand::class,
+            BotCommands::BTN_DEDUCT => DeductMaterialCommand::class,
+            BotCommands::BTN_ADD_STOCK => AddStockCommand::class,
+            BotCommands::BTN_HISTORY => HistoryCommand::class,
         ];
 
         $this->stateMap = [
-            'ADD_STOCK_' => AddStockCommand::class,
-            'DEDUCT_'    => DeductMaterialCommand::class,
-            'ADD_'       => CreateConsumableCommand::class,
+            BotCommands::STATE_ADD_STOCK => AddStockCommand::class,
+            BotCommands::STATE_DEDUCT => DeductMaterialCommand::class,
+            BotCommands::STATE_ADD_MATERIAL => CreateConsumableCommand::class,
         ];
     }
 
