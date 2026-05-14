@@ -25,7 +25,19 @@ try {
     $stateRepo = new \App\Repositories\UserStateRepository();
     $stateService = new \App\Services\StateService($stateRepo);
 
-    $controller = new BotController($bot, $userService, $stateService);
+    $consumableRepo = new \App\Repositories\ConsumableRepository();
+    $usageLogRepo = new \App\Repositories\UsageLogRepository();
+    $consumableService = new \App\Services\ConsumableService($consumableRepo, $usageLogRepo);
+
+    $commandFactory = new \App\Factories\CommandFactory(
+        $bot,
+        $stateService,
+        $userService,
+        $consumableService,
+        $usageLogRepo
+    );
+
+    $controller = new BotController($bot, $userService, $stateService, $commandFactory);
     $controller->handleUpdate($update);
 
 } catch (\Throwable $e) {
