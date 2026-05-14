@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Factories\CommandFactory;
 use App\Commands\CreateConsumableCommand;
 use App\Utils\TelegramBot;
 use App\Services\Interfaces\UserServiceInterface;
@@ -15,12 +16,15 @@ use App\Commands\HistoryCommand;
 class BotController
 {
     private array $commandMap;
+    private CommandFactory $commandFactory;
 
     public function __construct(
         private TelegramBot $bot,
         private UserServiceInterface $userService,
-        private StateServiceInterface $stateService
+        private StateServiceInterface $stateService,
+        CommandFactory $commandFactory
     ) {
+        $this->commandFactory = $commandFactory;
         $this->commandMap = [
             '/start'               => StartCommand::class,
             '📋 Склад'             => ListMaterialsCommand::class,
@@ -82,41 +86,7 @@ class BotController
 
     private function executeCommand(string $commandClass, int $chatId, array $update): void
     {
-        $consumableRepo = new \App\Repositories\ConsumableRepository();
-        $usageLogRepo = new \App\Repositories\UsageLogRepository();
-        $consumableService = new \App\Services\ConsumableService($consumableRepo, $usageLogRepo);
-
-        $command = match ($commandClass) {
-            StartCommand::class => new StartCommand(
-                $this->bot,
-                $this->stateService,
-                $this->userService
-            ),
-            ListMaterialsCommand::class => new ListMaterialsCommand(
-                $this->bot,
-                $consumableService
-            ),
-            CreateConsumableCommand::class => new CreateConsumableCommand(
-                $this->bot,
-                $this->stateService,
-                $consumableService
-            ),
-            DeductMaterialCommand::class => new DeductMaterialCommand(
-                $this->bot,
-                $this->stateService,
-                $consumableService
-            ),
-            AddStockCommand::class => new AddStockCommand(
-                $this->bot,
-                $this->stateService,
-                $consumableService
-            ),
-            HistoryCommand::class => new HistoryCommand(
-                $this->bot,
-                $usageLogRepo
-            ),
-            default => null
-        };
+        $command = $this->commandFactory->create($commandClass);
 
         if ($command) {
             $command->execute($chatId, $update);
