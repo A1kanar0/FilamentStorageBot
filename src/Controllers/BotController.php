@@ -16,6 +16,7 @@ use App\Commands\HistoryCommand;
 class BotController
 {
     private array $commandMap;
+    private array $stateMap;
     private CommandFactory $commandFactory;
 
     public function __construct(
@@ -25,6 +26,7 @@ class BotController
         CommandFactory $commandFactory
     ) {
         $this->commandFactory = $commandFactory;
+
         $this->commandMap = [
             '/start'               => StartCommand::class,
             '📋 Склад'             => ListMaterialsCommand::class,
@@ -32,6 +34,12 @@ class BotController
             '📦 Поповнити залишок' => AddStockCommand::class,
             '➖ Списати'           => DeductMaterialCommand::class,
             '📜 Історія'           => HistoryCommand::class,
+        ];
+
+        $this->stateMap = [
+            'ADD_STOCK_' => AddStockCommand::class,
+            'DEDUCT_'    => DeductMaterialCommand::class,
+            'ADD_'       => CreateConsumableCommand::class,
         ];
     }
 
@@ -56,26 +64,21 @@ class BotController
         $this->userService->authorize($chatId, $username);
 
         $stateData = $this->stateService->getCurrentStateFull($chatId);
-
         $globalCommands = array_keys($this->commandMap);
 
         if ($stateData && in_array($input, $globalCommands)) {
             $this->stateService->clearState($chatId);
-            $stateData = null; // Анулюємо стан для подальшої обробки
+            $stateData = null;
         }
 
         if ($stateData && strpos($input, '/') !== 0) {
-            if (strpos($stateData->getState(), 'ADD_STOCK_') === 0) {
-                $this->executeCommand(AddStockCommand::class, $chatId, $update);
-                return;
-            }
-            if (strpos($stateData->getState(), 'ADD_') === 0) {
-                $this->executeCommand(CreateConsumableCommand::class, $chatId, $update);
-                return;
-            }
-            if (strpos($stateData->getState(), 'DEDUCT_') === 0) {
-                $this->executeCommand(DeductMaterialCommand::class, $chatId, $update);
-                return;
+            $currentState = $stateData->getState();
+
+            foreach ($this->stateMap as $prefix => $commandClass) {
+                if (strpos($currentState, $prefix) === 0) {
+                    $this->executeCommand($commandClass, $chatId, $update);
+                    return;
+                }
             }
         }
 
