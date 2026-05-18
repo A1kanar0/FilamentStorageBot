@@ -4,10 +4,7 @@ error_reporting(E_ALL);
 
 require_once 'config.php';
 
-use App\Utils\TelegramBot;
-use App\Controllers\BotController;
-use App\Services\UserService;
-use App\Repositories\UserRepository;
+use App\AppContainer;
 
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
@@ -19,25 +16,11 @@ if (!$update) {
 }
 
 try {
-    $bot = new TelegramBot(TELEGRAM_TOKEN);
-    $userRepo = new UserRepository();
-    $userService = new UserService($userRepo);
-    $stateRepo = new \App\Repositories\UserStateRepository();
-    $stateService = new \App\Services\StateService($stateRepo);
+    // Створюємо контейнер залежностей
+    $container = new AppContainer();
 
-    $consumableRepo = new \App\Repositories\ConsumableRepository();
-    $usageLogRepo = new \App\Repositories\UsageLogRepository();
-    $consumableService = new \App\Services\ConsumableService($consumableRepo, $usageLogRepo);
-
-    $commandFactory = new \App\Factories\CommandFactory(
-        $bot,
-        $stateService,
-        $userService,
-        $consumableService,
-        $usageLogRepo
-    );
-
-    $controller = new BotController($bot, $userService, $stateService, $commandFactory);
+    // Отримуємо сконфігурований контролер без ручного створення сервісів
+    $controller = $container->getBotController();
     $controller->handleUpdate($update);
 
 } catch (\Throwable $e) {
