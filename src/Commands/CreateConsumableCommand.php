@@ -24,109 +24,132 @@ class CreateConsumableCommand implements CommandInterface
         $input = $data['message']['text'] ?? '';
 
         if (!$stateData) {
-            $this->stateService->setNextState($chatId, 'ADD_WAITING_CATEGORY');
-            $this->bot->sendReplyKeyboard($chatId, "Оберіть категорію матеріалу:", array_keys($this->categories));
+            $this->initiateCreationProcess($chatId);
             return;
         }
 
         $rawContext = $stateData->getContextData();
         $context = $rawContext ? json_decode($rawContext, true) : [];
+        $currentState = $stateData->getState();
 
-        switch ($stateData->getState()) {
-            case 'ADD_WAITING_CATEGORY':
-                if (!isset($this->categories[$input])) {
-                    $this->bot->sendMessage($chatId, "⚠️ Будь ласка, оберіть категорію з кнопок.");
-                    return;
-                }
+        // Refactored: Dispatching logic to dedicated methods instead of a huge switch statement
+        $this->handleState($currentState, $chatId, $input, $context);
+    }
 
-                $category = $this->categories[$input];
-                $context['category'] = $category;
+    private function initiateCreationProcess(int $chatId): void
+    {
+        $this->stateService->setNextState($chatId, 'ADD_WAITING_CATEGORY');
+        $this->bot->sendReplyKeyboard($chatId, "Оберіть категорію матеріалу:", array_keys($this->categories));
+    }
 
-                if ($category === 'filament') {
-                    $this->stateService->setNextState($chatId, 'ADD_WAITING_TYPE', $context);
-                    $this->bot->sendReplyKeyboard($chatId, "Оберіть тип пластику:", $this->allowedTypes);
-                } else {
-                    $context['type'] = 'resin';
-                    $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
-                    $this->bot->sendMessage($chatId, "📝 Введіть назву смоли (наприклад, Standard HD). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
-                }
-                break;
+    private function handleState(string $state, int $chatId, string $input, array $context): void
+    {
+        match ($state) {
+            'ADD_WAITING_CATEGORY' => $this->processCategorySelection($chatId, $input, $context),
+            'ADD_WAITING_TYPE'     => $this->processTypeSelection($chatId, $input, $context),
+            'ADD_WAITING_NAME'     => $this->processNameInput($chatId, $input, $context),
+            'ADD_WAITING_COLOR'    => $this->processColorInput($chatId, $input, $context),
+            'ADD_WAITING_BRAND'    => $this->processBrandInput($chatId, $input, $context),
+            'ADD_WAITING_WEIGHT'   => $this->processWeightInputAndSave($chatId, $input, $context),
+            default                => $this->bot->sendMessage($chatId, "⚠️ Невідомий стан. Почніть спочатку.")
+        };
+    }
 
-            case 'ADD_WAITING_TYPE':
-                if (!in_array($input, $this->allowedTypes)) {
-                    $this->bot->sendMessage($chatId, "⚠️ Такого типу немає в списку. Оберіть варіант на клавіатурі.");
-                    return;
-                }
+    private function processCategorySelection(int $chatId, string $input, array $context): void
+    {
+        if (!isset($this->categories[$input])) {
+            $this->bot->sendMessage($chatId, "⚠️ Будь ласка, оберіть категорію з кнопок.");
+            return;
+        }
 
-                $context['type'] = $input;
-                $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
-                $this->bot->sendMessage($chatId, "📝 Введіть власну назву або специфікацію (наприклад, Matte). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
-                break;
+        $category = $this->categories[$input];
+        $context['category'] = $category;
 
-            case 'ADD_WAITING_NAME':
-                $context['name'] = ($input === '-') ? null : $input;
+        if ($category === 'filament') {
+            $this->stateService->setNextState($chatId, 'ADD_WAITING_TYPE', $context);
+            $this->bot->sendReplyKeyboard($chatId, "Оберіть тип пластику:", $this->allowedTypes);
+        } else {
+            $context['type'] = 'resin';
+            $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
+            $this->bot->sendMessage($chatId, "📝 Введіть назву смоли (наприклад, Standard HD). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
+        }
+    }
 
-                $this->stateService->setNextState($chatId, 'ADD_WAITING_COLOR', $context);
-                $this->bot->sendMessage($chatId, "🎨 Введіть колір матеріалу (наприклад, Чорний). Або надішліть '-', щоб пропустити:");
-                break;
+    private function processTypeSelection(int $chatId, string $input, array $context): void
+    {
+        if (!in_array($input, $this->allowedTypes)) {
+            $this->bot->sendMessage($chatId, "⚠️ Такого типу немає в списку. Оберіть варіант на клавіатурі.");
+            return;
+        }
 
-            case 'ADD_WAITING_COLOR':
-                $context['color'] = ($input === '-') ? null : $input;
+        $context['type'] = $input;
+        $this->stateService->setNextState($chatId, 'ADD_WAITING_NAME', $context);
+        $this->bot->sendMessage($chatId, "📝 Введіть власну назву або специфікацію (наприклад, Matte). Або надішліть '-', щоб пропустити:", ['remove_keyboard' => true]);
+    }
 
-                $this->stateService->setNextState($chatId, 'ADD_WAITING_BRAND', $context);
-                $this->bot->sendMessage($chatId, "🏷 Введіть бренд/виробника (наприклад, Devil Design). Або надішліть '-', щоб пропустити:");
-                break;
+    private function processNameInput(int $chatId, string $input, array $context): void
+    {
+        $context['name'] = ($input === '-') ? null : $input;
+        $this->stateService->setNextState($chatId, 'ADD_WAITING_COLOR', $context);
+        $this->bot->sendMessage($chatId, "🎨 Введіть колір матеріалу (наприклад, Чорний). Або надішліть '-', щоб пропустити:");
+    }
 
-            case 'ADD_WAITING_BRAND':
-                $context['brand'] = ($input === '-') ? null : $input;
+    private function processColorInput(int $chatId, string $input, array $context): void
+    {
+        $context['color'] = ($input === '-') ? null : $input;
+        $this->stateService->setNextState($chatId, 'ADD_WAITING_BRAND', $context);
+        $this->bot->sendMessage($chatId, "🏷 Введіть бренд/виробника (наприклад, Devil Design). Або надішліть '-', щоб пропустити:");
+    }
 
-                $this->stateService->setNextState($chatId, 'ADD_WAITING_WEIGHT', $context);
-                $this->bot->sendMessage($chatId, "⚖️ Введіть початкову вагу котушки/пляшки в грамах:");
-                break;
+    private function processBrandInput(int $chatId, string $input, array $context): void
+    {
+        $context['brand'] = ($input === '-') ? null : $input;
+        $this->stateService->setNextState($chatId, 'ADD_WAITING_WEIGHT', $context);
+        $this->bot->sendMessage($chatId, "⚖️ Введіть початкову вагу котушки/пляшки в грамах:");
+    }
 
-            case 'ADD_WAITING_WEIGHT':
-                $weight = filter_var($input, FILTER_VALIDATE_FLOAT);
+    private function processWeightInputAndSave(int $chatId, string $input, array $context): void
+    {
+        $weight = filter_var($input, FILTER_VALIDATE_FLOAT);
 
-                if ($weight === false || $weight <= 0) {
-                    $this->bot->sendMessage($chatId, "❌ Будь ласка, введіть коректне число більше за 0.");
-                    return;
-                }
+        if ($weight === false || $weight <= 0) {
+            $this->bot->sendMessage($chatId, "❌ Будь ласка, введіть коректне число більше за 0.");
+            return;
+        }
 
-                try {
-                    $this->consumableService->createConsumable([
-                        'name' => $context['name'],
-                        'category' => $context['category'],
-                        'type' => $context['type'],
-                        'color' => $context['color'],
-                        'brand' => $context['brand'],
-                        'initial_amount' => $weight
-                    ]);
+        try {
+            $this->consumableService->createConsumable([
+                'name' => $context['name'],
+                'category' => $context['category'],
+                'type' => $context['type'],
+                'color' => $context['color'],
+                'brand' => $context['brand'],
+                'initial_amount' => $weight
+            ]);
 
-                    $this->stateService->clearState($chatId);
+            $this->stateService->clearState($chatId);
 
-                    $parts = array_filter([
-                        $context['type'] ?? null,
-                        $context['brand'] ?? null,
-                        $context['name'] ?? null,
-                        $context['color'] ?? null
-                    ]);
+            $parts = array_filter([
+                $context['type'] ?? null,
+                $context['brand'] ?? null,
+                $context['name'] ?? null,
+                $context['color'] ?? null
+            ]);
 
-                    $displayName = implode(' ', $parts);
+            $displayName = implode(' ', $parts);
 
-                    $this->bot->sendMessage($chatId, "✅ Новий матеріал **{$displayName}** успішно внесено до реєстру!");
-                    $this->bot->sendMainMenu($chatId);
+            $this->bot->sendMessage($chatId, "✅ Новий матеріал **{$displayName}** успішно внесено до реєстру!");
+            $this->bot->sendMainMenu($chatId);
 
-                } catch (\Exception $e) {
-                    $errorMessage = $e->getMessage();
-                    if (strpos($errorMessage, 'вже зареєстрований') !== false) {
-                        $this->bot->sendMessage($chatId, "❌ " . $errorMessage);
-                        $this->stateService->clearState($chatId);
-                        $this->bot->sendMainMenu($chatId);
-                    } else {
-                        $this->bot->sendMessage($chatId, "❌ Помилка: " . $errorMessage . "\n\n⚖️ Спробуйте ввести вагу ще раз:");
-                    }
-                }
-                break;
+        } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
+            if (strpos($errorMessage, 'вже зареєстрований') !== false) {
+                $this->bot->sendMessage($chatId, "❌ " . $errorMessage);
+                $this->stateService->clearState($chatId);
+                $this->bot->sendMainMenu($chatId);
+            } else {
+                $this->bot->sendMessage($chatId, "❌ Помилка: " . $errorMessage . "\n\n⚖️ Спробуйте ввести вагу ще раз:");
+            }
         }
     }
 }
